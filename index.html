@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quái vật Khánh Linh</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Pacifico & Quicksand -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+      background-color: #f361ac;
+    }
+    .font-pacifico {
+      font-family: 'Pacifico', cursive;
+    }
+
+    /* Floating sunlight dust / petals */
+    .floating-dust {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 8s linear infinite;
+    }
+    @keyframes floatUp {
+      0% {
+        transform: translateY(105vh) rotate(0deg) scale(0.6);
+        opacity: 0;
+      }
+      20% { opacity: 0.85; }
+      80% { opacity: 0.85; }
+      100% {
+        transform: translateY(-10vh) rotate(360deg) scale(1.1);
+        opacity: 0;
+      }
+    }
+
+    /* Pulse Glow */
+    @keyframes pulseGlow {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.5), 0 0 30px rgba(245, 158, 11, 0.3);
+      }
+      50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), 0 0 45px rgba(245, 158, 11, 0.4);
+      }
+    }
+    .pulse-glow {
+      animation: pulseGlow 2.2s infinite ease-in-out;
+    }
+
+    /* Floating mini envelope above chibi GIF */
+    @keyframes bobLetter {
+      0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 4px 8px rgba(245, 158, 11, 0.5)); }
+      50% { transform: translateY(-7px) scale(1.05); filter: drop-shadow(0 8px 14px rgba(245, 158, 11, 0.75)); }
+    }
+    .bob-envelope {
+      animation: bobLetter 2.2s infinite ease-in-out;
+    }
+
+    /* Found item ring mark */
+    .found-ring {
+      position: absolute;
+      border: 3px solid #f59e0b;
+      background: rgba(245, 158, 11, 0.28);
+      border-radius: 9999px;
+      transform: translate(-50%, -50%) scale(0);
+      animation: popRing 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      pointer-events: none;
+      z-index: 25;
+    }
+    @keyframes popRing {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      70% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+    }
+
+    /* Dynamic background container */
+    #main-bg-layer {
+      position: fixed;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: -2;
+      transition: background-image 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative text-slate-800 flex flex-col justify-between">
+  <div id="main-bg-layer"></div>
+  <div class="fixed inset-0 bg-amber-950/20 pointer-events-none -z-10"></div>
+  <div id="floating-container" class="fixed inset-0 overflow-hidden pointer-events-none -z-10"></div>
+  <audio id="bgm-player" loop preload="auto"></audio>
+  <button id="btn-music" onclick="window.toggleMusic()" title="Bật/Tắt Nhạc Nền" class="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-amber-900 shadow-md flex items-center justify-center border border-amber-300 transition-all active:scale-90 hover:scale-105 backdrop-blur-md">
+    <span id="music-icon" class="text-lg">🎵</span>
+  </button>
+  <main class="relative z-10 pt-10 pb-8 px-4 max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center items-center">
+
+    <section id="screen-start" class="w-full flex flex-col items-center justify-center text-center my-auto transition-all duration-500">
+      <div class="glass-card max-w-lg w-full rounded-3xl p-8 sm:p-10 shadow-2xl border-2 border-amber-200/80 flex flex-col items-center">
+        <div class="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center text-4xl mb-4 shadow-inner ring-4 ring-amber-200">
+           ❤️
+        </div>
+
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 mb-3">
+          Happy Vietnamese Women's Day • 20/10
+        </span>
+
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-amber-950 font-pacifico mb-3">
+          Gửi Người Đặc Biệt Nhất ✨
+        </h1>
+
+        <p class="text-slate-700 text-sm sm:text-base leading-relaxed mb-8 max-w-md">
+          Tớ có một món quà nhỏ tặng cậu 😁
+        </p>
+
+        <button onclick="window.startGame()" class="pulse-glow w-full sm:w-auto px-10 py-4 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-bold text-lg shadow-xl hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-2">
+          <span>Let's go</span>
+          <span class="text-xl">➔</span>
+        </button>
+
+        <p class="text-xs text-amber-900/80 mt-5 font-semibold flex items-center justify-center gap-1.5">
+          <span>💻</span>
+          <span>Dùng Laptop Nhé</span>
+        </p>
+      </div>
+    </section>
+
+    <section id="screen-game" class="w-full hidden flex-col items-center transition-all duration-500">
+      <div class="text-center mb-4">
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 mb-2">Thử thách tinh mắt 🔍</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900">Hãy tìm ra ba món đồ khác biệt trong hai căn phòng đi 😲</h2>
+        <p class="text-xs sm:text-sm text-slate-700 mt-1 max-w-xl">
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
+        <div class="glass-card rounded-2xl p-2.5 shadow-lg border border-amber-200/80 flex flex-col items-center">
+          <span class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1.5">Ảnh Gốc (A)</span>
+          <div class="relative w-full aspect-[9/16] max-h-[580px] rounded-xl overflow-hidden shadow-inner bg-stone-100">
+            <img id="img-room-a" src="" alt="Phòng gốc" class="w-full h-full object-cover select-none pointer-events-none">
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-2.5 shadow-lg border-2 border-amber-400 flex flex-col items-center relative">
+          <span class="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <span>Ảnh Chứa Điểm Bí Mật (B)</span>
+            <span class="animate-pulse">✨</span>
+          </span>
+          <div id="target-image-container" class="relative w-full aspect-[9/16] max-h-[580px] rounded-xl overflow-hidden shadow-inner bg-stone-100 select-none">
+            <img id="img-room-b" src="" alt="Phòng tìm điểm khác" class="w-full h-full object-cover select-none pointer-events-none">
+            <div id="hit-o" onclick="window.findItem('o', event)" class="absolute cursor-pointer transition-transform duration-200 hover:scale-110" style="top: 15.5%; left: 18%; width: 10.5%; z-index: 10;">
+              <img id="img-hidden-wall" src="" alt="Chiếc lá" class="w-full h-auto drop-shadow-sm select-none pointer-events-none">
+            </div>
+            <div id="hit-teddy" onclick="window.findItem('teddy', event)" class="absolute cursor-pointer transition-transform duration-200 hover:scale-110" style="top: 45%; left: 66%; width: 14%; z-index: 10;">
+              <img id="img-hidden-teddy" src="" alt="Chú gấu bông" class="w-full h-auto drop-shadow-md select-none pointer-events-none">
+            </div>
+            <div id="hit-mail" onclick="window.findItem('mail', event)" class="absolute cursor-pointer transition-transform duration-200 hover:scale-110" style="top: 66%; left: 84%; width: 8%; z-index: 10;">
+              <img id="img-hidden-mail" src="" alt="Phong thư bí mật" class="w-full h-auto drop-shadow-md select-none pointer-events-none rotate-[-6deg]">
+            </div>
+            <div id="rings-overlay" class="absolute inset-0 pointer-events-none"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-letters" class="w-full hidden flex-col items-center transition-all duration-500">
+      <div class="text-center mb-6">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 mb-2">Congratulations🎉</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900"></h2>
+        <p class="text-xs sm:text-sm text-slate-700 mt-1 max-w-md">
+        </p>
+      </div>
+
+      <!-- 3 Artifacts for Interaction -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-2xl mb-8">
+        <div onclick="window.openLetter('o')" class="glass-card rounded-2xl p-5 flex flex-col items-center text-center cursor-pointer hover:-translate-y-1.5 transition-all shadow-md hover:shadow-xl border-2 border-amber-200 group">
+          <div class="w-20 h-20 rounded-2xl bg-amber-50/70 flex items-center justify-center p-2 mb-3 shadow-inner group-hover:scale-105 transition-transform">
+            <img id="letter-item-wall" src="" alt="Chiếc lá" class="max-h-full max-w-full object-contain">
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm">One</h3>
+          <span id="badge-letter-o" class="mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Read</span>
+        </div>
+
+        <div onclick="window.openLetter('teddy')" class="glass-card rounded-2xl p-5 flex flex-col items-center text-center cursor-pointer hover:-translate-y-1.5 transition-all shadow-md hover:shadow-xl border-2 border-amber-200 group">
+          <div class="w-20 h-20 rounded-2xl bg-amber-50/70 flex items-center justify-center p-2 mb-3 shadow-inner group-hover:scale-105 transition-transform">
+            <img id="letter-item-teddy" src="" alt="Gấu bông" class="max-h-full max-w-full object-contain">
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm">Two</h3>
+          <span id="badge-letter-teddy" class="mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Read</span>
+        </div>
+
+        <div onclick="window.openLetter('mail')" class="glass-card rounded-2xl p-5 flex flex-col items-center text-center cursor-pointer hover:-translate-y-1.5 transition-all shadow-md hover:shadow-xl border-2 border-amber-200 group">
+          <div class="w-20 h-20 rounded-2xl bg-amber-50/70 flex items-center justify-center p-2 mb-3 shadow-inner group-hover:scale-105 transition-transform">
+            <img id="letter-item-mail" src="" alt="Phong thư" class="max-h-full max-w-full object-contain">
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm">Three</h3>
+          <span id="badge-letter-mail" class="mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Read</span>
+        </div>
+      </div>
+      <div id="btn-next-to-final" class="hidden flex-col items-center">
+        <button onclick="window.goToFinalScreen()" class="pulse-glow px-8 py-3 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-bold text-base shadow-xl hover:opacity-95 transition-all active:scale-95 flex items-center gap-2">
+          <span>Còn nữa nè 🥰</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="screen-final" class="w-full hidden flex-col items-center transition-all duration-700">
+      <div class="text-center mb-2">
+        <span class="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 mb-1">20/10 ❤️</span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-950 font-pacifico drop-shadow-sm">Món Quà Bí Mật Dành Riêng Cho Cậu</h2>
+      </div>
+
+      <div class="relative flex flex-col items-center my-3">
+        <button onclick="window.openSecretLetter()" class="bob-envelope relative z-20 flex flex-col items-center cursor-pointer group active:scale-95 focus:outline-none -mb-4">
+          <div class="w-14 h-14 rounded-2xl bg-amber-50 p-1.5 shadow-xl border-2 border-amber-300 group-hover:scale-105 transition-transform flex items-center justify-center">
+            <img id="final-mail-thumb" src="" alt="Thư bí mật" class="w-full h-full object-contain">
+          </div>
+          <span class="mt-1 px-3 py-0.5 rounded-full bg-amber-500/95 text-white text-[11px] font-semibold shadow-md tracking-tight group-hover:bg-amber-600 transition-colors border border-amber-200">
+            ✉️ Click 😸
+          </span>
+        </button>
+        <div class="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/90 bg-stone-900/10 backdrop-blur-sm relative z-10 flex items-center justify-center">
+          <img id="final-chibi-gif" src="" alt="Flower Chibi GIF" class="w-full h-full object-contain">
+        </div>
+      </div>
+
+      <!-- Sweet 20/10 Wish Card -->
+      <div class="glass-card w-full max-w-md rounded-2xl p-5 shadow-xl border border-amber-200 text-center mt-2">
+        <h3 class="text-base sm:text-lg font-bold text-amber-950 mb-1.5">Chúc Cậu 20/10 Luôn Rạng Rỡ & Hạnh Phúc! 💖</h3>
+        <p class="text-xs sm:text-sm text-slate-700 leading-relaxed mb-3">
+         Tớ chúc cậu Vương Thị Khánh Linh í cậu sẽ ngày càng học giỏi, xinh đẹp và hạnh phúc nha. Cậu í xinh gái thì cười nhiều lên 😁 
+        </p>
+        <button onclick="window.replayGame()" class="text-[11px] text-amber-900/70 hover:text-amber-900 underline">
+        </button>
+      </div>
+    </section>
+
+  </main>
+  <div id="modal-item-letter" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 shadow-2xl border-2 border-amber-300 relative transform transition-all scale-95 opacity-0 duration-300" id="item-modal-content">
+      <button onclick="window.closeItemModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm">
+        ✕
+      </button>
+
+      <div class="flex items-center gap-3.5 mb-4">
+        <div id="modal-item-icon-box" class="w-12 h-12 rounded-xl bg-amber-50 p-1.5 flex items-center justify-center shadow-inner border border-amber-200">
+          <img id="modal-item-img" src="" alt="Item" class="max-h-full object-contain">
+        </div>
+        <div>
+          <span class="text-[11px] text-amber-700 font-bold uppercase tracking-wider">Thông điệp 20/10</span>
+          <h4 id="modal-item-title" class="text-base font-bold text-slate-800">Tiêu đề kỷ vật</h4>
+        </div>
+      </div>
+
+      <div class="bg-amber-50/80 p-4 rounded-xl border border-amber-200 min-h-[90px] flex items-center">
+        <p id="modal-item-body" class="text-xs sm:text-sm text-slate-800 leading-relaxed italic">
+          Nội dung bức thư...
+        </p>
+      </div>
+
+      <button onclick="window.closeItemModal()" class="w-full mt-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm shadow-md transition-colors active:scale-95">
+        Đã ghi nhớ lời nhắn ✨
+      </button>
+    </div>
+  </div>
+
+  <div id="modal-secret-letter" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 shadow-2xl border-2 border-amber-400 text-center relative">
+      <button onclick="window.closeSecretModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm">
+        ✕
+      </button>
+
+      <div class="w-14 h-14 rounded-2xl bg-amber-100 p-2 mx-auto mb-2.5 shadow-inner flex items-center justify-center border border-amber-300">
+        <img id="modal-secret-icon" src="" alt="Thư" class="max-h-full object-contain">
+      </div>
+
+      <span class="text-[11px] text-amber-700 font-bold uppercase tracking-wider">Tấm Thiệp Mật Ước 20/10</span>
+      <h3 class="text-lg sm:text-xl font-bold text-amber-950 mt-1 mb-2.5">Lời Nhắn Bí Mật Gửi Đến Cậu...</h3>
+
+      <div class="bg-amber-50/90 rounded-xl p-3.5 border border-amber-200 mb-5 text-slate-800 text-xs sm:text-sm leading-relaxed italic">
+        "Khi nào cậu thi xong, deadline có thời gia rảnh đi coi phim với tớ nha 😁, nếu cậu bận quá cậu chưa cần chả lời tin nhắn này trước đâu vì yên tâm đi tớ sẽ không biến mất nữa đâu"
+      </div>
+
+      <!-- 2 LỰA CHỌN: ĐỒNG Ý & ĐỂ XEM -->
+      <div class="flex flex-col sm:flex-row gap-2.5">
+        <button onclick="window.chooseOption('agree')" class="flex-1 py-3 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs sm:text-sm shadow-md hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+          <span>Đồng ý luôn! 💕</span>
+        </button>
+
+        <button id="btn-maybe" onclick="window.chooseOption('maybe')" class="flex-1 py-3 px-3 rounded-xl bg-white/90 hover:bg-amber-50 border-2 border-amber-300 text-amber-800 font-bold text-xs sm:text-sm shadow-sm transition-all active:scale-95">
+          <span>Để xem đã... 😉</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       MODAL 3: KẾT QUẢ KHI CHỌN
+  =============================================== -->
+  <div id="modal-answer-result" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-xs w-full rounded-3xl p-5 shadow-2xl border-2 border-amber-400 text-center">
+      <div id="result-emoji" class="text-4xl mb-1.5 animate-bounce">🌻</div>
+      <h4 id="result-title" class="text-base font-bold text-amber-950 mb-1">Mật Ước Đã Được Lưu!</h4>
+      <p id="result-desc" class="text-xs text-slate-700 mb-3.5 leading-relaxed">
+        Nội dung phản hồi...
+      </p>
+      <button onclick="document.getElementById('modal-answer-result').classList.add('hidden')" class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md transition-colors">
+        Tuyệt vời luôn! ✨
+      </button>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       JAVASCRIPT: CONFIG & ENGINE
+  =============================================== -->
+  <script>
+    /* ============================================================
+       1. CẤU HÌNH ĐƯỜNG DẪN TÀI NGUYÊN (ASSETS FOLDERS)
+    ============================================================ */
+    const ASSETS_CONFIG = {
+      images: {
+        bg: "assets/images/bg.png",                    
+        room: "assets/images/anh.png",                
+        teddy: "assets/images/teddy.png",             
+        mail: "assets/images/mail.png",               
+        wallArt: "assets/images/anhro.png",           
+        wallArtFallback: "assets/images/o.png",       
+        endMail: "assets/images/mail_end.png",        
+        endMailFallback: "assets/images/mail.png",   
+        chibiGif: "assets/images/Flower Chibi GIF.jpg"
+      },
+      audio: {
+        bgm: "assets/audio/bgm.mp3"                  
+      }
+    };
+
+    /* Quản lý trạng thái */
+    const appState = {
+      foundItems: { o: false, teddy: false, mail: false },
+      readLetters: { o: false, teddy: false, mail: false },
+      musicPlaying: false,
+      useSynthFallback: false
+    };
+
+    const letterMessages = {
+      o: {
+        title: "Quái Vật",
+        key: "wallArt",
+        text: "Công nhận nha, như lời cậu nói thì HANU học căng thật nhỉ =))) Tớ đoán nhé, bây giờ đang là mùa thi của HANU đúng không? Tớ công nhận cậu đúng là quái vật học tập luôn ấy, học gì mà điên thật sự =))) Nhưng mà cũng phải chú ý sức khỏe nha. Người gì đâu mà gầy như que củi, gió thổi cái là bay, đã thế còn thức đêm nữa chứ. Thế mà vẫn sống được, đúng là quái vật thật =))) Quái vật KHÁNH LINH, Cố lên nha 😁  "
+      },
+      teddy: {
+        title: "Teddy",
+        key: "teddy",
+        text: "lâu lắm rồi không gặp cậu nhỉ, cậu dạo này còn ổn không ? Nhớ chuyện của Khánh Linh kể lắm luôn =))) "
+      },
+      mail: {
+        title: "Lần cuối",
+        key: "mail",
+        text: "Tớ ước được quay lại 3 tháng trước cái ngày mà tớ nhắn cái tin đó nhiều lúc hứng làm xong thấy nó không vui như tớ nghĩ tớ chán ngán việc biến mất rồi nó chán kinh khủng. Cậu có thể tin tớ nốt lần này được chứ 3 tháng không mạng xã hội, không ai hợp gu nói chuyện lại có tháng về quê nữa chứ chan vô cùng, tin tớ nốt lần này đi nếu tớ mà làm sai lần sau cậu cứ mạnh dạn mà delete tớ khỏi cuộc đời cậu. "
+      }
+    };
+
+    function loadConfiguredAssets() {
+      // 1. Ảnh nền body
+      const bgLayer = document.getElementById('main-bg-layer');
+      bgLayer.style.backgroundImage = `url('${ASSETS_CONFIG.images.bg}'), url('images/bg.png'), url('bg.png')`;
+
+      // 2. Hai ảnh phòng so sánh
+      const setRoomImg = (elId) => {
+        const el = document.getElementById(elId);
+        if (el) {
+          el.src = ASSETS_CONFIG.images.room;
+          el.onerror = () => {
+            el.onerror = () => { el.src = "anh.png"; };
+            el.src = "images/anh.png";
+          };
+        }
+      };
+      setRoomImg('img-room-a');
+      setRoomImg('img-room-b');
+
+      // 3. Chiếc lá (anhro / o) - không viền trắng
+      const wallImg = document.getElementById('img-hidden-wall');
+      if (wallImg) {
+        wallImg.src = ASSETS_CONFIG.images.wallArt;
+        wallImg.onerror = () => {
+          wallImg.onerror = () => {
+            wallImg.onerror = () => { wallImg.src = "o.png"; };
+            wallImg.src = "anhro.png";
+          };
+          wallImg.src = ASSETS_CONFIG.images.wallArtFallback;
+        };
+      }
+
+      // 4. Gấu bông
+      const teddyImg = document.getElementById('img-hidden-teddy');
+      if (teddyImg) {
+        teddyImg.src = ASSETS_CONFIG.images.teddy;
+        teddyImg.onerror = () => {
+          teddyImg.onerror = () => { teddyImg.src = "teddy.png"; };
+          teddyImg.src = "images/teddy.png";
+        };
+      }
+
+      // 5. Thư trên bàn gỗ
+      const mailImg = document.getElementById('img-hidden-mail');
+      if (mailImg) {
+        mailImg.src = ASSETS_CONFIG.images.mail;
+        mailImg.onerror = () => {
+          mailImg.onerror = () => { mailImg.src = "mail.png"; };
+          mailImg.src = "images/mail.png";
+        };
+      }
+
+      // 6. Thumbnails ở màn 3
+      const bindThumb = (id, assetKey) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.src = ASSETS_CONFIG.images[assetKey];
+          el.onerror = () => {
+            if (assetKey === 'wallArt') el.src = ASSETS_CONFIG.images.wallArtFallback;
+            else el.src = `${assetKey}.png`;
+          };
+        }
+      };
+      bindThumb('letter-item-wall', 'wallArt');
+      bindThumb('letter-item-teddy', 'teddy');
+      bindThumb('letter-item-mail', 'mail');
+
+      // 7. Màn 4: Ảnh GIF hoạt họa & Icon Thư Cuối Riêng Biệt
+      const chibiGif = document.getElementById('final-chibi-gif');
+      if (chibiGif) {
+        // Hỗ trợ xử lý khoảng trắng trong tên file và đổi đuôi .jpg / .gif
+        const tryGifSources = [
+          ASSETS_CONFIG.images.chibiGif,
+          "assets/images/Flower%20Chibi%20GIF.jpg",
+          "assets/images/Flower Chibi GIF.gif",
+          "assets/images/Flower%20Chibi%20GIF.gif",
+          "images/Flower Chibi GIF.jpg",
+          "images/Flower Chibi GIF.gif",
+          "Flower Chibi GIF.jpg",
+          "Flower Chibi GIF.gif"
+        ];
+        let gifAttempt = 0;
+        chibiGif.onerror = function() {
+          gifAttempt++;
+          if (gifAttempt < tryGifSources.length) {
+            chibiGif.src = tryGifSources[gifAttempt];
+          }
+        };
+        chibiGif.src = tryGifSources[0];
+      }
+
+      // Icon thư ở màn cuối (ưu tiên mail_end.png, nếu chưa có sẽ fallback sang mail.png)
+      const finalMailThumb = document.getElementById('final-mail-thumb');
+      if (finalMailThumb) {
+        finalMailThumb.src = ASSETS_CONFIG.images.endMail;
+        finalMailThumb.onerror = () => {
+          finalMailThumb.onerror = () => {
+            finalMailThumb.onerror = () => { finalMailThumb.src = "mail.png"; };
+            finalMailThumb.src = "mail_end.png";
+          };
+          finalMailThumb.src = ASSETS_CONFIG.images.endMailFallback;
+        };
+      }
+
+      const secretIcon = document.getElementById('modal-secret-icon');
+      if (secretIcon) {
+        secretIcon.src = ASSETS_CONFIG.images.endMail;
+        secretIcon.onerror = () => {
+          secretIcon.src = ASSETS_CONFIG.images.endMailFallback;
+        };
+      }
+
+      // 8. Cấu hình Audio player với loop = true
+      const bgmPlayer = document.getElementById('bgm-player');
+      bgmPlayer.src = ASSETS_CONFIG.audio.bgm;
+      bgmPlayer.loop = true;
+      bgmPlayer.onerror = () => {
+        appState.useSynthFallback = true;
+      };
+    }
+
+    /* ============================================================
+       3. HỆ THỐNG ÂM THANH (AUDIO PLAYER LOOP + FALLBACK SYNTH)
+    ============================================================ */
+    let audioCtx = null;
+    let synthTimer = null;
+    let melodyIndex = 0;
+    const lofiNotes = [261.63, 329.63, 392.00, 493.88, 523.25, 493.88, 392.00, 329.63, 220.00, 261.63, 329.63, 440.00];
+
+    function initWebAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playDing() {
+      try {
+        initWebAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.85);
+      } catch (e) {}
+    }
+
+    function playCelebrationSound() {
+      try {
+        initWebAudio();
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + idx * 0.08);
+          osc.stop(audioCtx.currentTime + 1.3);
+        });
+      } catch (e) {}
+    }
+
+    function playSynthNote() {
+      if (!appState.musicPlaying || !audioCtx) return;
+      const freq = lofiNotes[melodyIndex % lofiNotes.length];
+      melodyIndex++;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.15);
+    }
+
+    window.toggleMusic = function() {
+      initWebAudio();
+      const bgmPlayer = document.getElementById('bgm-player');
+      const icon = document.getElementById('music-icon');
+      const btn = document.getElementById('btn-music');
+
+      if (!appState.musicPlaying) {
+        appState.musicPlaying = true;
+        icon.innerText = "🎶";
+        btn.classList.add('bg-amber-200', 'border-amber-400', 'scale-105');
+
+        const playPromise = bgmPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            appState.useSynthFallback = true;
+            if (synthTimer) clearInterval(synthTimer);
+            playSynthNote();
+            synthTimer = setInterval(playSynthNote, 700);
+          });
+        }
+      } else {
+        appState.musicPlaying = false;
+        icon.innerText = "🎵";
+        btn.classList.remove('bg-amber-200', 'border-amber-400', 'scale-105');
+
+        bgmPlayer.pause();
+        if (synthTimer) clearInterval(synthTimer);
+      }
+    };
+
+    /* ============================================================
+       4. GAME LOGIC & SCREEN TRANSITIONS
+    ============================================================ */
+    window.startGame = function() {
+      initWebAudio();
+      if (!appState.musicPlaying) {
+        window.toggleMusic();
+      }
+      document.getElementById('screen-start').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('hidden');
+      document.getElementById('screen-game').classList.add('flex');
+    };
+
+    window.findItem = function(itemKey, event) {
+      if (appState.foundItems[itemKey]) return;
+
+      appState.foundItems[itemKey] = true;
+      playDing();
+
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 25,
+          spread: 60,
+          origin: {
+            x: event.clientX / window.innerWidth,
+            y: event.clientY / window.innerHeight
+          },
+          colors: ['#f59e0b', '#fbbf24', '#f97316', '#ffffff']
+        });
+      }
+
+      const container = document.getElementById('target-image-container');
+      const rect = container.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      const ring = document.createElement('div');
+      ring.className = 'found-ring w-12 h-12';
+      ring.style.left = `${clickX}px`;
+      ring.style.top = `${clickY}px`;
+      document.getElementById('rings-overlay').appendChild(ring);
+
+      const checkEl = document.getElementById(`check-${itemKey}`);
+      if (checkEl) {
+        checkEl.classList.remove('text-slate-500', 'border-amber-200');
+        checkEl.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-400');
+        checkEl.querySelector('.status-icon').innerText = '✅';
+      }
+
+      const totalFound = Object.values(appState.foundItems).filter(Boolean).length;
+      if (totalFound === 3) {
+        playCelebrationSound();
+        setTimeout(() => {
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+          }
+        }, 300);
+
+        setTimeout(() => {
+          document.getElementById('screen-game').classList.add('hidden');
+          document.getElementById('screen-game').classList.remove('flex');
+          document.getElementById('screen-letters').classList.remove('hidden');
+          document.getElementById('screen-letters').classList.add('flex');
+        }, 1300);
+      }
+    };
+
+    window.openLetter = function(key) {
+      initWebAudio();
+      playDing();
+
+      const data = letterMessages[key];
+      appState.readLetters[key] = true;
+
+      const badge = document.getElementById(`badge-letter-${key}`);
+      if (badge) {
+        badge.innerText = 'Đã Đọc ✨';
+        badge.className = 'mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800';
+      }
+
+      document.getElementById('modal-item-title').innerText = data.title;
+      document.getElementById('modal-item-body').innerText = `"${data.text}"`;
+      const imgEl = document.getElementById('modal-item-img');
+      imgEl.src = ASSETS_CONFIG.images[data.key] || `${data.key}.png`;
+      imgEl.onerror = () => {
+        if (data.key === 'wallArt') imgEl.src = ASSETS_CONFIG.images.wallArtFallback;
+      };
+
+      const modal = document.getElementById('modal-item-letter');
+      const content = document.getElementById('item-modal-content');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+      }, 20);
+
+      const allRead = Object.values(appState.readLetters).every(Boolean);
+      if (allRead) {
+        const nextBtn = document.getElementById('btn-next-to-final');
+        nextBtn.classList.remove('hidden');
+        nextBtn.classList.add('flex');
+      }
+    };
+
+    window.closeItemModal = function() {
+      const modal = document.getElementById('modal-item-letter');
+      const content = document.getElementById('item-modal-content');
+      content.classList.remove('scale-100', 'opacity-100');
+      content.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 220);
+    };
+
+    window.goToFinalScreen = function() {
+      playCelebrationSound();
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 140, spread: 90, origin: { y: 0.5 } });
+      }
+      document.getElementById('screen-letters').classList.add('hidden');
+      document.getElementById('screen-letters').classList.remove('flex');
+      const finalScreen = document.getElementById('screen-final');
+      finalScreen.classList.remove('hidden');
+      finalScreen.classList.add('flex');
+    };
+
+    window.openSecretLetter = function() {
+      playDing();
+      document.getElementById('modal-secret-letter').classList.remove('hidden');
+    };
+
+    window.closeSecretModal = function() {
+      document.getElementById('modal-secret-letter').classList.add('hidden');
+    };
+
+    window.chooseOption = function(choice) {
+      document.getElementById('modal-secret-letter').classList.add('hidden');
+      const resultModal = document.getElementById('modal-answer-result');
+      const title = document.getElementById('result-title');
+      const desc = document.getElementById('result-desc');
+      const emoji = document.getElementById('result-emoji');
+
+      if (choice === 'agree') {
+        playCelebrationSound();
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 130, spread: 90, origin: { y: 0.6 } });
+        }
+        emoji.innerText = "💖";
+        title.innerText = "Yay! Hẹn Thành Công!";
+        desc.innerText = "Mật ước đã được ghi lại rồi nhé! Tớ sẽ chuẩn bị một buổi đi chơi thật tuyệt vời và chu đáo dành cho cậu! ✨";
+      } else {
+        playDing();
+        emoji.innerText = "😉";
+        title.innerText = "Để Xem Nào...";
+        desc.innerText = "Hi hi, tớ sẽ chuẩn bị thật nhiều điều bất ngờ hơn nữa để chắc chắn cậu sẽ gật đầu cái rụp nhé! Chúc cậu 20/10 ngập tràn nụ cười!";
+      }
+
+      resultModal.classList.remove('hidden');
+    };
+
+    window.replayGame = function() {
+      appState.foundItems = { o: false, teddy: false, mail: false };
+      appState.readLetters = { o: false, teddy: false, mail: false };
+      document.getElementById('rings-overlay').innerHTML = '';
+
+      ['o', 'teddy', 'mail'].forEach(k => {
+        const checkEl = document.getElementById(`check-${k}`);
+        checkEl.className = 'flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-xl border border-amber-200 text-xs sm:text-sm font-semibold text-slate-500 shadow-sm transition-all';
+        checkEl.querySelector('.status-icon').innerText = '⚪';
+
+        const badge = document.getElementById(`badge-letter-${k}`);
+        badge.innerText = 'Chưa Đọc';
+        badge.className = 'mt-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-600';
+      });
+
+      document.getElementById('btn-next-to-final').classList.add('hidden');
+      document.getElementById('screen-final').classList.add('hidden');
+      document.getElementById('screen-final').classList.remove('flex');
+
+      document.getElementById('screen-start').classList.remove('hidden');
+      document.getElementById('screen-start').classList.add('flex');
+    };
+
+    function initFloating() {
+      const container = document.getElementById('floating-container');
+      const items = ['🌻', '✨', '💛', '🌸', '🌼', '☀️'];
+      for (let i = 0; i < 16; i++) {
+        const el = document.createElement('div');
+        el.className = 'floating-dust';
+        el.innerText = items[Math.floor(Math.random() * items.length)];
+        el.style.left = `${Math.random() * 100}%`;
+        el.style.fontSize = `${Math.random() * 14 + 16}px`;
+        el.style.animationDuration = `${Math.random() * 6 + 7}s`;
+        el.style.animationDelay = `${Math.random() * 5}s`;
+        container.appendChild(el);
+      }
+    }
+
+    window.onload = function() {
+      loadConfiguredAssets();
+      initFloating();
+    };
+  </script>
+</body>
+</html>
